@@ -1,0 +1,91 @@
+# Blueprint Render — AutoChain Emma+
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Avant de déployer:
+# 1. Pousser le code sur GitHub (sans .env)
+# 2. Créer une DB PostgreSQL (Neon gratuit OU Render Postgres)
+# 3. Connecter le repo dans Render → New → Blueprint
+# 4. Remplir les variables secrètes (APP_KEY, DB_*, BLOCKCHAIN_*)
+
+services:
+  - type: web
+    name: autochain-api
+    runtime: docker
+    plan: free
+    rootDir: backend-laravel/toto
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_NAME
+        value: AutoChainEmma
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - key: RUN_SEED
+        value: "true"
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: BLOCKCHAIN_RPC_URL
+        sync: false
+      - key: BLOCKCHAIN_CONTRACT_ADDRESS
+        sync: false
+      - key: BLOCKCHAIN_CHAIN_ID
+        value: "11155111"
+      - key: BLOCKCHAIN_NETWORK
+        value: sepolia
+      - key: BLOCKCHAIN_ADMIN_ADDRESS
+        sync: false
+      - key: ADMIN_PRIVATE_KEY
+        sync: false
+      - key: BLOCKCHAIN_EXPLORER_TX_URL
+        value: "https://sepolia.etherscan.io/tx/{hash}"
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: FILESYSTEM_DISK
+        value: public
+
+  - type: web
+    name: autochain-web
+    runtime: static
+    plan: free
+    rootDir: frontend-spa
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_APP_CONTRACT_ADDRESS
+        sync: false
+      - key: VITE_CHAIN_ID
+        value: "11155111"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

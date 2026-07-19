@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+**/node_modules/
+vendor/
+**/vendor/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+blockchain/.env
+backend-laravel/toto/.env
+frontend-spa/.env
+# Profiles locaux (secrets) — les .example.json restent versionnables
+config/blockchain-profiles/*.json
+!config/blockchain-profiles/*.example.json
+!config/blockchain-profiles/.gitkeep
+
+# Keys & wallets
+*.pem
+*.key
+mnemonic.txt
+private-key*.txt
+
+# Build / cache
+dist/
+build/
+.cache/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Laravel
+backend-laravel/toto/storage/logs/*
+backend-laravel/toto/storage/framework/cache/*
+backend-laravel/toto/storage/framework/sessions/*
+backend-laravel/toto/storage/framework/views/*
+backend-laravel/toto/bootstrap/cache/*.php
+!backend-laravel/toto/storage/app/public/.gitignore
+
+# Uploads / avatars (regenerated)
+backend-laravel/toto/storage/app/public/avatars/*
+
+# Local tooling
+_tmp_*
+_patch_*.py
+backups/
+*.sql
+*.zip
+autochain-emma.zip

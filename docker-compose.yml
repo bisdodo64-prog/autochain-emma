@@ -1,0 +1,62 @@
+version: '3.8'
+
+# Infra uniquement (Laragon gere PHP/Node en local).
+# Backend/frontend : utiliser start-demo.bat (ports 9001 / 3000).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: autochain-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: autochain_emma
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - autochain-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: autochain-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - autochain-network
+
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: autochain-ipfs
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+      - "5001:5001"
+      - "8080:8080"
+    volumes:
+      - ipfs_data:/data/ipfs
+    networks:
+      - autochain-network
+
+  ganache:
+    image: trufflesuite/ganache:latest
+    container_name: autochain-ganache
+    restart: unless-stopped
+    ports:
+      - "8545:8545"
+    command: --host 0.0.0.0 --port 8545 --networkId 1337 --accounts 10 --defaultBalanceEther 1000
+    networks:
+      - autochain-network
+
+volumes:
+  postgres_data:
+    driver: local
+  ipfs_data:
+    driver: local
+
+networks:
+  autochain-network:
+    driver: bridge
