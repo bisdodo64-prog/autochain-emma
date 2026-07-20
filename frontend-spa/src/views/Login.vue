@@ -29,12 +29,18 @@
 
         <form v-if="mode === 'login'" @submit.prevent="handleLogin" class="auth-form">
           <h2>Bon retour</h2>
-          <p class="subtitle">Connectez-vous avec votre email et mot de passe</p>
+          <p class="subtitle">Utilisez l’email de votre compte (Gmail, Yahoo, Outlook…)</p>
 
           <label>Email</label>
           <div class="field">
             <i class="fas fa-envelope"></i>
-            <input v-model="loginForm.email" type="email" required placeholder="Votre adresse email" />
+            <input
+              v-model="loginForm.email"
+              type="email"
+              required
+              autocomplete="email"
+              placeholder="ex. jean@gmail.com"
+            />
           </div>
 
           <label>Mot de passe</label>
@@ -54,19 +60,26 @@
 
         <form v-else @submit.prevent="handleRegister" class="auth-form">
           <h2>Créer votre compte</h2>
-          <p class="subtitle">Créez un compte avec n'importe quel email — données synchronisées avec l'API</p>
+          <p class="subtitle">Choisissez n’importe quel email — <strong>pas besoin de @autochain.com</strong></p>
 
           <label>Nom complet</label>
           <div class="field">
             <i class="fas fa-user"></i>
-            <input v-model="registerForm.name" type="text" required placeholder="Votre nom" />
+            <input v-model="registerForm.name" type="text" required autocomplete="name" placeholder="Votre nom" />
           </div>
 
           <label>Email</label>
           <div class="field">
             <i class="fas fa-envelope"></i>
-            <input v-model="registerForm.email" type="email" required placeholder="Votre email professionnel" />
+            <input
+              v-model="registerForm.email"
+              type="email"
+              required
+              autocomplete="email"
+              placeholder="ex. marie@yahoo.fr ou toi@outlook.com"
+            />
           </div>
+          <p class="email-hint">Gmail, Yahoo, Outlook, iCloud… tous les domaines sont acceptés.</p>
 
           <label>Mot de passe</label>
           <div class="field">

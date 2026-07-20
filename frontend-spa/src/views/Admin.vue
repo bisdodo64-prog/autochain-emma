@@ -115,7 +115,7 @@
 
         <label>Email</label>
 
-        <input v-model="form.email" />
+        <input v-model="form.email" type="email" placeholder="ex. jean@gmail.com" />
 
         <label>Rôle</label>
 
