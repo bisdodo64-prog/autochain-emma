@@ -6,12 +6,15 @@ cd /var/www/html
 php artisan config:clear || true
 php artisan storage:link || true
 
+# Migrations must succeed before seeding (do not swallow errors)
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
-  php artisan migrate --force || true
+  echo "==> Running migrations..."
+  php artisan migrate --force
 fi
 
 if [ "${RUN_SEED:-false}" = "true" ]; then
-  php artisan db:seed --force --class=DatabaseSeeder || true
+  echo "==> Running database seed..."
+  php artisan db:seed --force --class=DatabaseSeeder
 fi
 
 php artisan config:cache || true
