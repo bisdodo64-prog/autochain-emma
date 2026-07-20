@@ -1,8 +1,14 @@
 <template>
-  <aside class="sidebar glass-dark animate-slide-in-left" :class="{ open: sidebarOpen }">
+  <aside class="sidebar glass-dark" :class="{ open: sidebarOpen }">
     <div class="sidebar-mobile-bar">
       <span class="sidebar-mobile-title">Menu</span>
-      <button type="button" class="sidebar-close" @click="closeSidebar" aria-label="Fermer le menu">
+      <button
+        type="button"
+        class="sidebar-close"
+        @click.stop.prevent="closeSidebar"
+        @touchend.stop.prevent="closeSidebar"
+        aria-label="Fermer le menu"
+      >
         <span class="sidebar-close-x" aria-hidden="true">×</span>
         <span class="sidebar-close-label">Fermer</span>
       </button>
@@ -188,7 +194,13 @@ export default {
     watch(userAvatar, () => { avatarFailed.value = false })
     const userInitials = computed(() => getInitials(userName.value))
     const sidebarOpen = computed(() => store.getters['ui/sidebarOpen'])
-    const closeSidebar = () => store.dispatch('ui/closeSidebar')
+    const closeSidebar = (e) => {
+      if (e) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+      store.commit('ui/SET_SIDEBAR_OPEN', false)
+    }
 
     watch(() => route.fullPath, () => {
       if (window.innerWidth <= 768) closeSidebar()
@@ -447,14 +459,17 @@ export default {
     min-height: 100dvh;
     z-index: 1200;
     padding-top: 12px;
-    transform: translateX(-105%);
+    /* Important: pas d'animation CSS globale qui override ce transform */
+    animation: none !important;
+    transform: translate3d(-105%, 0, 0);
     transition: transform 0.25s ease;
     box-shadow: 8px 0 32px rgba(0,0,0,.45);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    pointer-events: auto;
   }
   .sidebar.open {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   .sidebar-mobile-bar {
     display: flex;
@@ -463,6 +478,10 @@ export default {
     margin: 0 0 12px;
     padding: 0 4px 10px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #0f172a;
   }
   .sidebar-mobile-title {
     font-size: 13px;
@@ -470,6 +489,13 @@ export default {
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: #94a3b8;
+  }
+  .sidebar-close {
+    position: relative;
+    z-index: 3;
+    min-height: 44px;
+    min-width: 88px;
+    pointer-events: auto;
   }
 }
 </style>

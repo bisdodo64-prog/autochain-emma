@@ -5,7 +5,8 @@
       <div
         class="sidebar-overlay"
         :class="{ open: sidebarOpen }"
-        @click="closeSidebar"
+        @click.stop="closeSidebar"
+        @touchend.stop.prevent="closeSidebar"
       ></div>
       <Sidebar />
       <main class="main-content">
