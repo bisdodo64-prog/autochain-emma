@@ -34,11 +34,19 @@ class EthereumService
 
     public function isLive(): bool
     {
+        if (!$this->live) {
+            $this->bootstrap();
+        }
+
         return $this->live;
     }
 
     public function getStatus(): array
     {
+        if (!$this->live) {
+            $this->bootstrap();
+        }
+
         $rpc = $this->rpcUrl;
         $rpcPublic = preg_replace('#(/v2/)[^/?\s]+#', '$1***', $rpc);
         $abiPath = (string) config('blockchain.abi_path');
@@ -53,6 +61,7 @@ class EthereumService
             'explorer_tx_url' => config('blockchain.explorer_tx_url') ?: null,
             'abi_loaded' => $abiPath !== '' && is_file($abiPath),
             'error' => $this->bootstrapError,
+            'deploy_marker' => 'sepolia-v2',
         ];
     }
 

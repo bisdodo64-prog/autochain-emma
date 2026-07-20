@@ -67,7 +67,12 @@
             <td>
               <div class="user-name-cell">
                 <div class="user-avatar">
-                  <img v-if="u.avatar_url" :src="u.avatar_url" :alt="u.name" />
+                  <img
+                    v-if="u.avatar_url && !failedAvatars[u.id]"
+                    :src="avatarSrc(u)"
+                    :alt="u.name"
+                    @error="markAvatarFailed(u.id)"
+                  />
                   <span v-else>{{ initials(u.name) }}</span>
                 </div>
                 <strong>{{ u.name }}</strong>
@@ -181,8 +186,7 @@
 import { computed, onMounted, ref } from 'vue'
 
 import { fetchUsersHybrid, saveUserHybrid, deleteUserHybrid, SOURCE_LABELS } from '../js/utils/dataService'
-
-
+import { getInitials, resolveAvatarUrl } from '../js/utils/avatarUrl'
 
 export default {
 
@@ -207,8 +211,12 @@ export default {
     const toast = ref({ show: false, message: '', type: 'success' })
 
     const users = ref([])
+    const failedAvatars = ref({})
 
-
+    const avatarSrc = (u) => resolveAvatarUrl(u.avatar_url)
+    const markAvatarFailed = (id) => {
+      failedAvatars.value = { ...failedAvatars.value, [id]: true }
+    }
 
     const loadUsers = async () => {
 
@@ -217,6 +225,7 @@ export default {
       const result = await fetchUsersHybrid()
 
       users.value = result.data
+      failedAvatars.value = {}
 
       dataSource.value = SOURCE_LABELS[result.source] || ''
 
@@ -230,7 +239,7 @@ export default {
 
 
 
-    const initials = (name) => String(name || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    const initials = (name) => getInitials(name, '?')
 
 
 
@@ -355,6 +364,12 @@ export default {
       users,
 
       initials,
+
+      avatarSrc,
+
+      failedAvatars,
+
+      markAvatarFailed,
 
       activeCount,
 

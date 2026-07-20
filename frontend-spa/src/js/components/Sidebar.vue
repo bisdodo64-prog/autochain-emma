@@ -18,7 +18,12 @@
     <div class="sidebar-account">
       <div class="account-row">
         <div class="account-avatar">
-          <img v-if="userAvatar" :src="userAvatar" alt="" />
+          <img
+            v-if="userAvatar && !avatarFailed"
+            :src="userAvatar"
+            alt=""
+            @error="avatarFailed = true"
+          />
           <span v-else>{{ userInitials }}</span>
         </div>
         <div class="account-info">
@@ -156,9 +161,10 @@
 </template>
 
 <script>
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
+import { getInitials, resolveAvatarUrl } from '../utils/avatarUrl'
 
 export default {
   name: 'Sidebar',
@@ -171,15 +177,12 @@ export default {
     const userRoles = computed(() => store.state.auth?.user?.roles || [])
     const userName = computed(() => user.value.name || 'Utilisateur')
     const userEmail = computed(() => user.value.email || '')
-    const userAvatar = computed(() => {
-      const url = user.value.avatar_url
-      if (!url) return null
-      if (String(url).startsWith('data:')) return url
-      return `${url}${url.includes('?') ? '&' : '?'}t=${user.value.updated_at || ''}`
-    })
-    const userInitials = computed(() =>
-      String(userName.value).split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    const avatarFailed = ref(false)
+    const userAvatar = computed(() =>
+      resolveAvatarUrl(user.value.avatar_url, user.value.updated_at || '')
     )
+    watch(userAvatar, () => { avatarFailed.value = false })
+    const userInitials = computed(() => getInitials(userName.value))
     const sidebarOpen = computed(() => store.getters['ui/sidebarOpen'])
     const closeSidebar = () => store.dispatch('ui/closeSidebar')
 
@@ -225,6 +228,7 @@ export default {
       userEmail,
       userAvatar,
       userInitials,
+      avatarFailed,
       userRoles,
       canSwitchRoles,
       currentRole,

@@ -11,8 +11,16 @@
     <div class="drivers-grid">
       <div v-for="driver in drivers" :key="driver.id" class="driver-card">
         <div class="driver-top">
-          <div class="driver-avatar" :style="{ background: driver.avatarUrl ? 'transparent' : driver.color }">
-            <img v-if="driver.avatarUrl" :src="driver.avatarUrl" :alt="driver.name" />
+          <div
+            class="driver-avatar"
+            :style="{ background: showDriverAvatar(driver) ? 'transparent' : driver.color }"
+          >
+            <img
+              v-if="showDriverAvatar(driver)"
+              :src="driver.avatarUrl"
+              :alt="driver.name"
+              @error="markDriverAvatarFailed(driver.id)"
+            />
             <template v-else>{{ driver.initials }}</template>
           </div>
           <div class="driver-status" :class="driver.active ? 'online' : 'offline'">
@@ -93,6 +101,7 @@ import { ref, onMounted } from 'vue'
 import api from '../js/api'
 import { loadDrivers, saveDrivers } from '../js/utils/localData'
 import { fetchDriversHybrid, fetchVehiclesHybrid } from '../js/utils/dataService'
+import { resolveAvatarUrl } from '../js/utils/avatarUrl'
 
 export default {
   name: 'Drivers',
@@ -115,16 +124,28 @@ export default {
     const drivers = ref(loadDrivers())
     const vehiclesList = ref([])
     const dataSource = ref('local')
+    const failedAvatars = ref({})
     const persist = () => saveDrivers(drivers.value)
+
+    const showDriverAvatar = (driver) =>
+      Boolean(driver.avatarUrl) && !failedAvatars.value[driver.id]
+
+    const markDriverAvatarFailed = (id) => {
+      failedAvatars.value = { ...failedAvatars.value, [id]: true }
+    }
 
     const loadData = async () => {
       const [driversResult, vehiclesResult] = await Promise.all([
         fetchDriversHybrid(),
         fetchVehiclesHybrid()
       ])
-      drivers.value = driversResult.data
+      drivers.value = (driversResult.data || []).map((d) => ({
+        ...d,
+        avatarUrl: resolveAvatarUrl(d.avatarUrl || d.avatar_url) || null
+      }))
       vehiclesList.value = vehiclesResult.data
       dataSource.value = driversResult.source
+      failedAvatars.value = {}
       vehicleOptions.value = vehiclesList.value.map(
         (v) => `${v.brand} ${v.model} (${v.licensePlate})`
       )
@@ -244,6 +265,8 @@ export default {
       form,
       selectedHistory,
       toast,
+      showDriverAvatar,
+      markDriverAvatarFailed,
       openAdd,
       openEdit,
       openAssign,

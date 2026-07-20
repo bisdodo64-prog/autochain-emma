@@ -2,6 +2,7 @@ import api from '../api'
 import { normalizeVehicle } from './vehicles'
 import { withWeb3Proof } from './web3Sign'
 import { normalizeUser, getRoleLabel, getPrimaryRole } from './roles'
+import { resolveAvatarUrl } from './avatarUrl'
 import {
   loadVehicles,
   saveVehicles,
@@ -81,7 +82,7 @@ export const normalizeApiDriver = (driver, index) => {
     km: vehicle?.current_mileage ? `${vehicle.current_mileage.toLocaleString('fr-FR')} km` : '0 km',
     rating: driver.rating || 4.8,
     active: true,
-    avatarUrl: driver.avatar_url || null,
+    avatarUrl: resolveAvatarUrl(driver.avatar_url) || null,
     color: COLORS[index % COLORS.length]
   }
 }
@@ -276,7 +277,7 @@ export const normalizeAdminUser = (user) => ({
   email: user.email,
   role: user.role || 'Chauffeur',
   active: user.active !== false,
-  avatar_url: user.avatar_url || null
+  avatar_url: resolveAvatarUrl(user.avatar_url) || null
 })
 
 const loadLocalAdminUsers = () => {
@@ -529,7 +530,7 @@ export const normalizeProfile = (user, extras = {}) => {
     department: extras.department || departmentForRole(role),
     joined: formatDateFr(normalized?.created_at || extras.joined),
     walletAddress: normalized?.wallet_address || extras.walletAddress || '',
-    avatarUrl: normalized?.avatar_url || extras.avatarUrl || null,
+    avatarUrl: resolveAvatarUrl(normalized?.avatar_url || extras.avatarUrl) || null,
     roleLabel: getRoleLabel(role)
   }
 }

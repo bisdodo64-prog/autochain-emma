@@ -35,11 +35,8 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute(): ?string
     {
-        if (!$this->avatar_path) {
-            return null;
-        }
-
-        return '/api/users/' . $this->id . '/avatar';
+        // Always point to the avatar endpoint (file or initials SVG fallback).
+        return url('/api/users/' . $this->id . '/avatar');
     }
 
     /**

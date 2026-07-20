@@ -1,6 +1,9 @@
 # Backend Laravel — AutoChain Emma+ (Render)
 FROM php:8.2-cli-bookworm
 
+# Bump to force Render rebuild when cache sticks
+ARG CACHEBUST=20260720b
+
 RUN apt-get update && apt-get install -y \
     git unzip libpq-dev libzip-dev libpng-dev libgmp-dev \
     && docker-php-ext-install pdo_pgsql pgsql zip gd bcmath gmp \

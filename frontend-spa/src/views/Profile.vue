@@ -8,7 +8,13 @@
       <div class="profile-sidebar">
         <div class="avatar-section">
           <div class="avatar-wrap">
-            <img v-if="avatarSrc" :src="avatarSrc" alt="Photo de profil" class="avatar-img" />
+            <img
+              v-if="avatarSrc && !avatarFailed"
+              :src="avatarSrc"
+              alt="Photo de profil"
+              class="avatar-img"
+              @error="avatarFailed = true"
+            />
             <div v-else class="avatar-large">{{ userInitials }}</div>
             <label class="avatar-upload" title="Changer la photo">
               <i class="fas fa-camera"></i>
@@ -117,6 +123,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useRoute } from 'vue-router'
+import { getInitials, resolveAvatarUrl } from '../js/utils/avatarUrl'
 import {
   fetchProfileHybrid,
   saveProfileHybrid,
@@ -142,6 +149,7 @@ export default {
     const toast = ref({ show: false, message: '' })
     const wallet = ref({ connected: false, address: '' })
     const avatarCacheBust = ref(Date.now())
+    const avatarFailed = ref(false)
     let loadingLock = false
 
     const roleMap = {
@@ -167,13 +175,13 @@ export default {
     const viewRoleLabel = computed(() => roleMap[viewRole.value] || '')
     const userRole = computed(() => roleMap[viewRole.value] || profile.value.roleLabel || 'Utilisateur')
 
-    const avatarSrc = computed(() => {
-      const url = profile.value.avatarUrl || store.state.auth?.user?.avatar_url
-      if (!url) return null
-      if (String(url).startsWith('data:')) return url
-      const sep = url.includes('?') ? '&' : '?'
-      return `${url}${sep}t=${avatarCacheBust.value}`
-    })
+    const avatarSrc = computed(() =>
+      resolveAvatarUrl(
+        profile.value.avatarUrl || store.state.auth?.user?.avatar_url,
+        avatarCacheBust.value
+      )
+    )
+    watch(avatarSrc, () => { avatarFailed.value = false })
 
     const applyWallet = (walletAddress) => {
       if (walletAddress) {
@@ -237,10 +245,7 @@ export default {
       }
     )
 
-    const userInitials = computed(() => {
-      const name = String(profile.value.name || 'U').trim()
-      return name.split(/\s+/).map((n) => n[0] || '').join('').toUpperCase().slice(0, 2) || 'U'
-    })
+    const userInitials = computed(() => getInitials(profile.value.name))
 
     const activities = computed(() => {
       const role = viewRole.value
@@ -391,6 +396,7 @@ export default {
       saving,
       uploadingAvatar,
       avatarSrc,
+      avatarFailed,
       dataSource,
       userRole,
       userInitials,

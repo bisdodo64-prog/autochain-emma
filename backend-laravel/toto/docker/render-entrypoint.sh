@@ -6,7 +6,6 @@ cd /var/www/html
 php artisan config:clear || true
 php artisan storage:link || true
 
-# Neon pooled URLs break Laravel migrations (PgBouncer transaction mode)
 case "${DATABASE_URL:-}${DB_HOST:-}" in
   *-pooler*)
     echo "ERROR: Neon POOLED connection detected (-pooler)."
@@ -30,6 +29,9 @@ fi
 
 php artisan config:cache || true
 php artisan route:cache || true
+
+echo "==> ABI present? $(test -f /var/www/html/resources/blockchain/VehicleRegistry.json && echo YES || echo NO)"
+echo "==> Deploy marker sepolia-v2"
 
 PORT="${PORT:-10000}"
 exec php artisan serve --host=0.0.0.0 --port="$PORT"

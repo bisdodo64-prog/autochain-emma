@@ -102,8 +102,14 @@
           <div class="user-menu">
             <button class="user-btn" @click="toggleUserMenu">
               <div class="user-avatar">
-                <img v-if="userAvatar" :src="userAvatar" alt="" class="user-avatar-img" />
-                <i v-else class="fas fa-user"></i>
+                <img
+                  v-if="userAvatar && !avatarFailed"
+                  :src="userAvatar"
+                  alt=""
+                  class="user-avatar-img"
+                  @error="avatarFailed = true"
+                />
+                <span v-else class="user-initials">{{ userInitials }}</span>
               </div>
               <div class="user-info">
                 <span class="user-name">{{ userName }}</span>
@@ -132,10 +138,11 @@
 </template>
 
 <script>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { fetchNotificationsHybrid, dismissAlertHybrid } from '../utils/dataService'
+import { getInitials, resolveAvatarUrl } from '../utils/avatarUrl'
 import WalletConnect from './WalletConnect.vue'
 
 export default {
@@ -194,12 +201,15 @@ export default {
     const unreadMsgs = computed(() => messages.value.filter((m) => !m.read).length)
     
     const userName = computed(() => store.state.auth?.user?.name || 'Utilisateur')
-    const userAvatar = computed(() => {
-      const url = store.state.auth?.user?.avatar_url
-      if (!url) return null
-      if (String(url).startsWith('data:')) return url
-      return `${url}${url.includes('?') ? '&' : '?'}t=${store.state.auth?.user?.updated_at || ''}`
-    })
+    const avatarFailed = ref(false)
+    const userInitials = computed(() => getInitials(userName.value))
+    const userAvatar = computed(() =>
+      resolveAvatarUrl(
+        store.state.auth?.user?.avatar_url,
+        store.state.auth?.user?.updated_at || ''
+      )
+    )
+    watch(userAvatar, () => { avatarFailed.value = false })
     const userRole = computed(() => {
       const roles = store.state.auth?.user?.roles || []
       const map = { super_admin: 'Super Admin', gestionnaire_parc: 'Gestionnaire', chauffeur: 'Chauffeur', garagiste_agree: 'Garagiste', auditeur: 'Auditeur' }
@@ -276,6 +286,8 @@ export default {
     return { 
       userName,
       userAvatar,
+      userInitials,
+      avatarFailed,
       userRole,
       userMenuOpen,
       notifOpen,
@@ -549,6 +561,13 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.user-initials {
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 .user-info {

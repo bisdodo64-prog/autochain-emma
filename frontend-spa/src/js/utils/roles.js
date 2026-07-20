@@ -1,3 +1,5 @@
+import { resolveAvatarUrl } from './avatarUrl'
+
 const BACKEND_TO_FRONTEND = {
   super_admin: 'super_admin',
   fleet_manager: 'gestionnaire_parc',
@@ -32,7 +34,11 @@ export const normalizeUser = (user) => {
     ...role,
     name: mapBackendRole(role.name)
   }))
-  return { ...user, roles }
+  return {
+    ...user,
+    roles,
+    avatar_url: resolveAvatarUrl(user.avatar_url) || null
+  }
 }
 
 export const getPrimaryRole = (user) => user?.roles?.[0]?.name || null

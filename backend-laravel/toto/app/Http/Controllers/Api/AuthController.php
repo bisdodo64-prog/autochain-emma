@@ -205,11 +205,48 @@ class AuthController extends Controller
     {
         $user = User::findOrFail($id);
 
-        if (!$user->avatar_path || !Storage::disk('public')->exists($user->avatar_path)) {
-            return response()->json(['message' => 'Photo introuvable'], 404);
+        if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+            return Storage::disk('public')->response($user->avatar_path);
         }
 
-        return Storage::disk('public')->response($user->avatar_path);
+        // Ephemeral disks (Render) lose uploaded/seeded files after restart —
+        // serve a clean initials SVG instead of a broken <img>.
+        return $this->initialsAvatarResponse($user);
+    }
+
+    private function initialsAvatarResponse(User $user)
+    {
+        $parts = preg_split('/\s+/', trim((string) $user->name)) ?: ['U'];
+        $initials = strtoupper(
+            mb_substr($parts[0] ?? 'U', 0, 1) . mb_substr($parts[1] ?? '', 0, 1)
+        );
+        if ($initials === '') {
+            $initials = 'U';
+        }
+
+        $palette = ['0ea5e9', '6366f1', '10b981', 'f59e0b', 'ef4444', 'a855f7'];
+        $color = $palette[((int) $user->id) % count($palette)];
+        $safe = htmlspecialchars($initials, ENT_QUOTES | ENT_XML1, 'UTF-8');
+
+        $svg = <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#{$color}"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#g)"/>
+  <text x="128" y="128" dy=".36em" text-anchor="middle" fill="#ffffff"
+        font-family="system-ui,-apple-system,Segoe UI,sans-serif"
+        font-size="96" font-weight="700">{$safe}</text>
+</svg>
+SVG;
+
+        return response($svg, 200, [
+            'Content-Type' => 'image/svg+xml; charset=utf-8',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 
     public function updatePassword(Request $request)
