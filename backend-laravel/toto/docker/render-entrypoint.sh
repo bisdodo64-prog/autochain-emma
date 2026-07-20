@@ -6,7 +6,16 @@ cd /var/www/html
 php artisan config:clear || true
 php artisan storage:link || true
 
-# One-shot: wipe Neon/Postgres and recreate schema (set DB_FRESH=true once, then false)
+# Neon pooled URLs break Laravel migrations (PgBouncer transaction mode)
+case "${DATABASE_URL:-}${DB_HOST:-}" in
+  *-pooler*)
+    echo "ERROR: Neon POOLED connection detected (-pooler)."
+    echo "In Neon Dashboard → Connect → disable 'Pooled connection'."
+    echo "Copy the DIRECT URL (host without -pooler) into DATABASE_URL on Render."
+    exit 1
+    ;;
+esac
+
 if [ "${DB_FRESH:-false}" = "true" ]; then
   echo "==> DB_FRESH=true — migrate:fresh --seed"
   php artisan migrate:fresh --force --seed --seeder=DatabaseSeeder
