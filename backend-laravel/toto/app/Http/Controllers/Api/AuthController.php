@@ -110,9 +110,16 @@ class AuthController extends Controller
                 'wallet_address' => $request->wallet_address,
             ]);
             
-            // Assign default role (auditor)
-            $user->assignRole('auditor');
-        }
+            // Assign default role
+            try {
+                $user->assignRole('auditeur');
+            } catch (\Throwable) {
+                try {
+                    $user->assignRole('auditor');
+                } catch (\Throwable) {
+                    // roles may not exist yet
+                }
+            }        }
 
         // Revoke old tokens
         $user->tokens()->delete();

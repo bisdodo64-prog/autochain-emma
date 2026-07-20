@@ -165,15 +165,29 @@ export default {
       walletLoading.value = true
       error.value = null
       try {
+        if (typeof window === 'undefined' || typeof window.ethereum === 'undefined') {
+          throw new Error('Ouvre cette page dans le navigateur MetaMask (mobile) ou installe l’extension.')
+        }
         await store.dispatch('blockchain/connectWallet')
         const address = store.state.blockchain.account
-        const message = `AutoChain Emma+ Authentication\nTimestamp: ${Date.now()}`
+        if (!address) {
+          throw new Error('Adresse MetaMask introuvable')
+        }
+        const message = `AutoChain Emma+ Authentication\nWallet: ${address.toLowerCase()}\nTimestamp: ${Date.now()}`
         const signature = await store.dispatch('blockchain/signMessage', message)
-        await store.dispatch('auth/web3Login', { walletAddress: address, signature, message })
+        await store.dispatch('auth/web3Login', {
+          walletAddress: address.toLowerCase(),
+          signature,
+          message
+        })
         router.push('/dashboard')
       } catch (err) {
         const msg = err?.response?.data?.message || err.message || 'Erreur de connexion wallet'
-        error.value = msg === 'Invalid signature' ? 'Signature MetaMask invalide' : msg
+        if (/signature/i.test(msg)) {
+          error.value = 'Signature MetaMask invalide — réessaie, ou utilise email/mot de passe.'
+        } else {
+          error.value = msg
+        }
       } finally {
         walletLoading.value = false
       }

@@ -27,14 +27,19 @@ export async function signSensitiveAction(action, payload = {}) {
     await store.dispatch('blockchain/connectWallet')
   }
 
-  await store.dispatch('blockchain/ensureLocalNetwork')
+  // Ne force pas un switch de réseau juste pour signer (évite les échecs mobile)
+  try {
+    await store.dispatch('blockchain/ensureLocalNetwork')
+  } catch {
+    // Signature possible même si le réseau n'est pas Sepolia
+  }
 
-  const wallet_address = store.getters['blockchain/account']
+  const wallet_address = (store.getters['blockchain/account'] || '').toLowerCase()
   if (!wallet_address) {
     throw new Error('Wallet MetaMask non connecté')
   }
 
-  const message = buildSignMessage(action, payload)
+  const message = buildSignMessage(action, { ...payload, Wallet: wallet_address })
   const signature = await store.dispatch('blockchain/signMessage', message)
 
   return { wallet_address, signature, message }

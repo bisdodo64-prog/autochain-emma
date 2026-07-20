@@ -130,12 +130,28 @@ class Web3Service {
 
   async signMessage(message) {
     if (this.mock) {
-      return '0x' + 'mock'.repeat(16);
+      return '0x' + '00'.repeat(65);
     }
-    if (!this.signer) {
+    if (!this.account || !window.ethereum) {
       throw new Error('Wallet non connecté');
     }
-    return this.signer.signMessage(message);
+
+    // personal_sign hex = plus fiable sur MetaMask mobile que signer.signMessage()
+    const from = this.account;
+    const hexMessage = ethers.hexlify(ethers.toUtf8Bytes(message));
+    try {
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [hexMessage, from]
+      });
+      return signature;
+    } catch (error) {
+      // Fallback ethers (desktop / autres wallets)
+      if (!this.signer) {
+        this.signer = await this.provider.getSigner();
+      }
+      return this.signer.signMessage(message);
+    }
   }
 
   getContract() {
