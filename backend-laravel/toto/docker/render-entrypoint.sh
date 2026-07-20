@@ -9,8 +9,7 @@ php artisan storage:link || true
 case "${DATABASE_URL:-}${DB_HOST:-}" in
   *-pooler*)
     echo "ERROR: Neon POOLED connection detected (-pooler)."
-    echo "In Neon Dashboard → Connect → disable 'Pooled connection'."
-    echo "Copy the DIRECT URL (host without -pooler) into DATABASE_URL on Render."
+    echo "Use the DIRECT connection string (host without -pooler) in DATABASE_URL."
     exit 1
     ;;
 esac
