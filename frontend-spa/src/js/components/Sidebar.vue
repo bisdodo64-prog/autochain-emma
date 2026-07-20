@@ -1,8 +1,12 @@
 <template>
   <aside class="sidebar glass-dark animate-slide-in-left" :class="{ open: sidebarOpen }">
-    <button type="button" class="sidebar-close" @click="closeSidebar" aria-label="Fermer le menu">
-      <i class="fas fa-times"></i>
-    </button>
+    <div class="sidebar-mobile-bar">
+      <span class="sidebar-mobile-title">Menu</span>
+      <button type="button" class="sidebar-close" @click="closeSidebar" aria-label="Fermer le menu">
+        <span class="sidebar-close-x" aria-hidden="true">×</span>
+        <span class="sidebar-close-label">Fermer</span>
+      </button>
+    </div>
     <div class="sidebar-header">
       <div class="logo-container">
         <div class="logo-icon animate-float">
@@ -261,19 +265,33 @@ export default {
   z-index: 100;
 }
 
-.sidebar-close {
+.sidebar-mobile-bar {
   display: none;
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
+}
+
+.sidebar-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: none;
   border-radius: 10px;
-  background: rgba(148,163,184,.15);
-  color: #e2e8f0;
+  background: rgba(56, 189, 248, 0.18);
+  color: #f8fafc;
   cursor: pointer;
-  z-index: 2;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar-close-x {
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.sidebar-close-label {
+  line-height: 1;
 }
 
 .account-row {
@@ -424,21 +442,34 @@ export default {
     top: 0;
     left: 0;
     bottom: 0;
-    width: min(300px, 86vw);
+    width: min(300px, 88vw);
     min-height: 100vh;
-    z-index: 100;
+    min-height: 100dvh;
+    z-index: 1200;
+    padding-top: 12px;
     transform: translateX(-105%);
     transition: transform 0.25s ease;
-    box-shadow: 8px 0 32px rgba(0,0,0,.35);
+    box-shadow: 8px 0 32px rgba(0,0,0,.45);
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .sidebar.open {
     transform: translateX(0);
   }
-  .sidebar-close {
-    display: inline-flex;
+  .sidebar-mobile-bar {
+    display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    margin: 0 0 12px;
+    padding: 0 4px 10px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+  .sidebar-mobile-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
   }
 }
 </style>

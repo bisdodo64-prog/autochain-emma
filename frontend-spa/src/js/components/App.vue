@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import Navbar from './Navbar.vue'
 import Sidebar from './Sidebar.vue'
@@ -40,6 +40,22 @@ export default {
     const isAuthenticated = computed(() => store.getters['auth/isAuthenticated'])
     const sidebarOpen = computed(() => store.getters['ui/sidebarOpen'])
     const closeSidebar = () => store.dispatch('ui/closeSidebar')
+
+    const onKeydown = (e) => {
+      if (e.key === 'Escape') closeSidebar()
+    }
+
+    watch(sidebarOpen, (open) => {
+      if (typeof document === 'undefined') return
+      document.body.style.overflow = open && window.innerWidth <= 768 ? 'hidden' : ''
+    })
+
+    onMounted(() => window.addEventListener('keydown', onKeydown))
+    onUnmounted(() => {
+      window.removeEventListener('keydown', onKeydown)
+      document.body.style.overflow = ''
+    })
+
     return { isAuthenticated, sidebarOpen, closeSidebar }
   }
 }
@@ -63,8 +79,10 @@ export default {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 23, 0.55);
-  z-index: 90;
+  background: rgba(2, 6, 23, 0.65);
+  z-index: 1100;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .fade-enter-active,
