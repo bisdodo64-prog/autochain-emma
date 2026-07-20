@@ -16,6 +16,7 @@ class EthereumService
     protected ?Contract $contract = null;
     protected ?Client $http = null;
     protected bool $live = false;
+    protected ?string $bootstrapError = null;
     protected string $adminAddress;
     protected string $garageAddress;
     protected string $contractAddress;
@@ -27,7 +28,7 @@ class EthereumService
         $this->adminAddress = (string) config('blockchain.admin_address');
         $this->garageAddress = (string) config('blockchain.garage_address');
         $this->contractAddress = (string) config('blockchain.contract_address');
-        $this->rpcUrl = (string) config('blockchain.rpc_url');
+        $this->rpcUrl = trim((string) config('blockchain.rpc_url'));
         $this->bootstrap();
     }
 
@@ -38,9 +39,9 @@ class EthereumService
 
     public function getStatus(): array
     {
-        $rpc = (string) config('blockchain.rpc_url');
-        // Ne pas exposer la clé Alchemy/Infura au frontend
+        $rpc = $this->rpcUrl;
         $rpcPublic = preg_replace('#(/v2/)[^/?\s]+#', '$1***', $rpc);
+        $abiPath = (string) config('blockchain.abi_path');
 
         return [
             'live' => $this->live,
@@ -50,14 +51,21 @@ class EthereumService
             'chain_id' => config('blockchain.chain_id'),
             'admin_address' => $this->adminAddress ?: null,
             'explorer_tx_url' => config('blockchain.explorer_tx_url') ?: null,
-            'abi_loaded' => (bool) config('blockchain.abi_path'),
+            'abi_loaded' => $abiPath !== '' && is_file($abiPath),
+            'error' => $this->bootstrapError,
         ];
     }
 
     protected function bootstrap(): void
     {
-        if (!$this->rpcUrl || !$this->contractAddress) {
+        if ($this->rpcUrl === '') {
+            $this->bootstrapError = 'BLOCKCHAIN_RPC_URL manquant';
             return;
+        }
+
+        // Corriger un collage du type "BLOCKCHAIN_RPC_URL=https://..."
+        if (str_contains($this->rpcUrl, '=')) {
+            $this->rpcUrl = trim((string) preg_replace('/^[A-Z0-9_]+=/i', '', $this->rpcUrl));
         }
 
         try {
@@ -71,18 +79,35 @@ class EthereumService
                 ],
             ]);
 
-            if ($response->getStatusCode() !== 200) {
+            $payload = json_decode((string) $response->getBody(), true);
+            if ($response->getStatusCode() !== 200 || empty($payload['result'])) {
+                $this->bootstrapError = 'RPC Sepolia sans réponse valide (HTTP ' . $response->getStatusCode() . ')';
                 return;
             }
 
-            $abi = $this->loadAbi();
-            $this->web3 = new Web3(new HttpProvider($this->rpcUrl, 30));
-            $this->contract = new Contract($this->web3->provider, $abi);
-            $this->contract->at($this->contractAddress);
+            // RPC OK → considéré live pour l'UI
             $this->live = true;
+
+            if ($this->contractAddress === '') {
+                $this->bootstrapError = 'BLOCKCHAIN_CONTRACT_ADDRESS manquant';
+                return;
+            }
+
+            try {
+                $abi = $this->loadAbi();
+                $this->web3 = new Web3(new HttpProvider($this->rpcUrl, 30));
+                $this->contract = new Contract($this->web3->provider, $abi);
+                $this->contract->at($this->contractAddress);
+                $this->bootstrapError = null;
+            } catch (\Throwable $contractError) {
+                // RPC OK mais contrat/ABI KO — l'UI reste "connecté", les writes iront en stub
+                $this->bootstrapError = 'RPC OK, contrat: ' . $contractError->getMessage();
+                Log::warning($this->bootstrapError);
+            }
         } catch (\Throwable $e) {
+            $this->live = false;
+            $this->bootstrapError = $e->getMessage();
             Log::warning('Blockchain indisponible, mode stub actif: ' . $e->getMessage(), [
-                'rpc_url' => $this->rpcUrl,
                 'contract' => $this->contractAddress,
                 'abi_path' => config('blockchain.abi_path'),
             ]);
@@ -91,13 +116,13 @@ class EthereumService
 
     protected function loadAbi(): array
     {
-        $path = config('blockchain.abi_path');
-        if (!$path || !is_file($path)) {
-            throw new \RuntimeException('ABI VehicleRegistry introuvable: ' . $path);
+        $path = (string) config('blockchain.abi_path');
+        if ($path === '' || !is_file($path)) {
+            throw new \RuntimeException('ABI VehicleRegistry introuvable: ' . ($path ?: '(vide)'));
         }
 
-        $json = json_decode(file_get_contents($path), true);
-        if (!isset($json['abi'])) {
+        $json = json_decode((string) file_get_contents($path), true);
+        if (!isset($json['abi']) || !is_array($json['abi'])) {
             throw new \RuntimeException('ABI invalide dans ' . $path);
         }
 

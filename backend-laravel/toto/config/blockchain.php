@@ -1,24 +1,12 @@
 <?php
 
-$abiPath = env('BLOCKCHAIN_ABI_PATH');
-if (!$abiPath) {
-    $candidates = [
-        base_path('resources/blockchain/VehicleRegistry.json'),
-        base_path('../../blockchain/build/contracts/VehicleRegistry.json'),
-    ];
-    foreach ($candidates as $candidate) {
-        $resolved = realpath($candidate);
-        if ($resolved) {
-            $abiPath = $resolved;
-            break;
-        }
-    }
-}
+$defaultAbi = base_path('resources/blockchain/VehicleRegistry.json');
 
 return [
     'rpc_url' => env('BLOCKCHAIN_RPC_URL', env('WEB3_RPC_URL', 'http://127.0.0.1:8545')),
     'contract_address' => env('BLOCKCHAIN_CONTRACT_ADDRESS', env('CONTRACT_ADDRESS')),
-    'abi_path' => $abiPath,
+    // Chemin relatif au conteneur — ne pas utiliser realpath() (casse config:cache)
+    'abi_path' => env('BLOCKCHAIN_ABI_PATH', $defaultAbi),
     'chain_id' => (int) env('BLOCKCHAIN_CHAIN_ID', 1337),
     'network' => env('BLOCKCHAIN_NETWORK', 'local'),
     'gas_limit' => (int) env('BLOCKCHAIN_GAS_LIMIT', 600000),

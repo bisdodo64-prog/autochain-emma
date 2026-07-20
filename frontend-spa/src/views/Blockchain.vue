@@ -15,6 +15,7 @@
       <i :class="chainLive ? 'fas fa-link' : 'fas fa-unlink'"></i>
       {{ chainLive ? (chainNetwork === 'sepolia' ? 'Nœud Sepolia connecté' : 'Nœud Ethereum connecté (Ganache)') : (chainNetwork === 'sepolia' ? 'Sepolia inaccessible — vérifiez RPC Infura' : 'Ganache non détecté — lancez start-blockchain.bat') }}
     </p>
+    <p v-if="chainError" class="chain-status stub">{{ chainError }}</p>
     <p v-if="chainLive && chainNetwork" class="chain-hint">
       Réseau : <strong>{{ chainNetwork }}</strong>
       <span v-if="chainNetwork === 'local'"> — copiez le hash et cherchez-le dans Ganache → Transactions</span>
@@ -156,6 +157,7 @@ export default {
     const dataSource = ref('')
     const chainLive = ref(null)
     const chainNetwork = ref('')
+    const chainError = ref('')
     const localAccount = ref(isLocalToken())
     const transactions = ref([])
     const stats = ref({ tx: 0, certified: 0, maintenance: 0, anomalies: 0 })
@@ -171,9 +173,11 @@ export default {
         const status = await api.getBlockchainStatus()
         chainLive.value = Boolean(status?.blockchain?.live)
         chainNetwork.value = status?.blockchain?.network || 'local'
+        chainError.value = status?.blockchain?.error || ''
       } catch {
         chainLive.value = false
         chainNetwork.value = ''
+        chainError.value = 'Impossible de joindre /api/blockchain/status'
       }
       loading.value = false
     }
@@ -247,7 +251,7 @@ export default {
 
 
 
-    return { transactions, stats, showModal, selected, toast, loading, syncing, dataSource, chainLive, chainNetwork, localAccount, openTx, copyHash, syncChain }
+    return { transactions, stats, showModal, selected, toast, loading, syncing, dataSource, chainLive, chainNetwork, chainError, localAccount, openTx, copyHash, syncChain }
 
   }
 
