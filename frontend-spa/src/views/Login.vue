@@ -300,6 +300,12 @@ export default {
 
 .auth-form h2 { margin: 0; color: #f8fafc; font-size: 22px; }
 .subtitle { color: #94a3b8; font-size: 13px; margin: 6px 0 18px; }
+.subtitle strong { color: #7dd3fc; font-weight: 600; }
+.email-hint {
+  margin: -8px 0 14px;
+  font-size: 12px;
+  color: #64748b;
+}
 .auth-form label {
   display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
   color: #94a3b8; margin: 12px 0 6px;
