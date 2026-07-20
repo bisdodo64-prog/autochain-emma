@@ -38,14 +38,19 @@ class EthereumService
 
     public function getStatus(): array
     {
+        $rpc = (string) config('blockchain.rpc_url');
+        // Ne pas exposer la clé Alchemy/Infura au frontend
+        $rpcPublic = preg_replace('#(/v2/)[^/?\s]+#', '$1***', $rpc);
+
         return [
             'live' => $this->live,
             'network' => config('blockchain.network'),
-            'rpc_url' => config('blockchain.rpc_url'),
+            'rpc_url' => $rpcPublic,
             'contract_address' => $this->contractAddress ?: null,
             'chain_id' => config('blockchain.chain_id'),
             'admin_address' => $this->adminAddress ?: null,
             'explorer_tx_url' => config('blockchain.explorer_tx_url') ?: null,
+            'abi_loaded' => (bool) config('blockchain.abi_path'),
         ];
     }
 
@@ -76,7 +81,11 @@ class EthereumService
             $this->contract->at($this->contractAddress);
             $this->live = true;
         } catch (\Throwable $e) {
-            Log::warning('Blockchain indisponible, mode stub actif: ' . $e->getMessage());
+            Log::warning('Blockchain indisponible, mode stub actif: ' . $e->getMessage(), [
+                'rpc_url' => $this->rpcUrl,
+                'contract' => $this->contractAddress,
+                'abi_path' => config('blockchain.abi_path'),
+            ]);
         }
     }
 

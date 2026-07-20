@@ -2,7 +2,17 @@
 
 $abiPath = env('BLOCKCHAIN_ABI_PATH');
 if (!$abiPath) {
-    $abiPath = realpath(base_path('../../blockchain/build/contracts/VehicleRegistry.json')) ?: null;
+    $candidates = [
+        base_path('resources/blockchain/VehicleRegistry.json'),
+        base_path('../../blockchain/build/contracts/VehicleRegistry.json'),
+    ];
+    foreach ($candidates as $candidate) {
+        $resolved = realpath($candidate);
+        if ($resolved) {
+            $abiPath = $resolved;
+            break;
+        }
+    }
 }
 
 return [
