@@ -94,12 +94,12 @@
       </template>
 
       <template v-else>
-        <router-link v-if="isGestionnaire || isGaragiste" to="/vehicles" class="sidebar-item group">
+        <router-link v-if="isGestionnaire || isGaragiste || isChauffeur" to="/vehicles" class="sidebar-item group">
           <div class="item-icon"><i class="fas fa-car-side"></i></div>
           <span>Véhicules</span>
           <div class="item-indicator"></div>
         </router-link>
-        <router-link v-if="isGestionnaire || isGaragiste" to="/maintenance" class="sidebar-item group">
+        <router-link v-if="isGestionnaire || isGaragiste || isChauffeur" to="/maintenance" class="sidebar-item group">
           <div class="item-icon"><i class="fas fa-tools"></i></div>
           <span>Maintenance</span>
           <div class="item-indicator"></div>
@@ -114,7 +114,7 @@
           <span>Documents</span>
           <div class="item-indicator"></div>
         </router-link>
-        <router-link v-if="isAuditeur || isGaragiste" to="/blockchain" class="sidebar-item group">
+        <router-link v-if="isAuditeur || isGaragiste || isChauffeur" to="/blockchain" class="sidebar-item group">
           <div class="item-icon"><i class="fas fa-cubes"></i></div>
           <span>Blockchain</span>
           <div class="item-indicator"></div>
@@ -122,6 +122,11 @@
         <router-link v-if="isAuditeur" to="/audit" class="sidebar-item group">
           <div class="item-icon"><i class="fas fa-search"></i></div>
           <span>Audit</span>
+          <div class="item-indicator"></div>
+        </router-link>
+        <router-link v-if="isChauffeur" to="/missions" class="sidebar-item group">
+          <div class="item-icon"><i class="fas fa-route"></i></div>
+          <span>Missions</span>
           <div class="item-indicator"></div>
         </router-link>
       </template>
@@ -210,6 +215,7 @@ export default {
     const currentRole = computed(() => userRoles.value[0]?.name || '')
     const isSuperAdmin = computed(() => currentRole.value === 'super_admin')
     const isGestionnaire = computed(() => currentRole.value === 'gestionnaire_parc')
+    const isChauffeur = computed(() => currentRole.value === 'chauffeur')
     const isGaragiste = computed(() => currentRole.value === 'garagiste_agree')
     const isAuditeur = computed(() => currentRole.value === 'auditeur')
     const showAdminMenu = computed(() => isSuperAdmin.value || canSwitchRoles.value)
@@ -250,6 +256,7 @@ export default {
       currentRole,
       isSuperAdmin,
       isGestionnaire,
+      isChauffeur,
       isGaragiste,
       isAuditeur,
       showAdminMenu,

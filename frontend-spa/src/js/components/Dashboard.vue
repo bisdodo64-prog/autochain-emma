@@ -511,13 +511,17 @@ export default {
       showAddVehicle.value = false
     }
 
-    const startMission = () => {
+    const startMission = async () => {
       const v = vehicles.value.find(v => v.licensePlate === myVehicle.value.licensePlate)
       if (v) {
         v.status = 'En mission'
         v.statusClass = 'mission'
+        myVehicle.value.status = 'En mission'
+        persistVehicles()
+        showToast('🚗 Mission démarrée pour ' + myVehicle.value.brand + ' ' + myVehicle.value.model + ' !')
+      } else {
+        showToast('❌ Véhicule non trouvé', 'error')
       }
-      showToast('🚗 Mission démarrée pour ' + myVehicle.value.brand + ' ' + myVehicle.value.model + ' !')
     }
 
     const openMileageModal = () => {
@@ -526,7 +530,7 @@ export default {
     }
 
     const saveMileage = async () => {
-      if (newMileage.value < myVehicle.value.mileage) {
+      if (!newMileage.value || newMileage.value < myVehicle.value.mileage) {
         showToast('Le kilométrage ne peut pas diminuer !', 'error')
         return
       }
@@ -537,19 +541,32 @@ export default {
       try {
         if (vehicleMatch?.id) {
           await updateMileageHybrid(vehicleMatch.id, nextMileage, vehicleMatch.vin)
+          myVehicle.value.mileage = nextMileage
+          vehicleMatch.mileage = nextMileage
+          persistVehicles()
+          showMileage.value = false
+          showToast('📏 Kilométrage enregistré : ' + formatKm(nextMileage) + ' km')
+        } else {
+          // Fallback local si pas de vehicleMatch
+          myVehicle.value.mileage = nextMileage
+          if (vehicleMatch) {
+            vehicleMatch.mileage = nextMileage
+          }
+          persistVehicles()
+          showMileage.value = false
+          showToast('📏 Kilométrage enregistré (local) : ' + formatKm(nextMileage) + ' km')
         }
       } catch (error) {
-        showToast(error?.message || 'Mise à jour kilométrage échouée', 'error')
-        return
+        console.error('Erreur kilométrage:', error)
+        // Fallback local en cas d'erreur API
+        myVehicle.value.mileage = nextMileage
+        if (vehicleMatch) {
+          vehicleMatch.mileage = nextMileage
+        }
+        persistVehicles()
+        showMileage.value = false
+        showToast('📏 Kilométrage enregistré (local) : ' + formatKm(nextMileage) + ' km')
       }
-
-      myVehicle.value.mileage = nextMileage
-      if (vehicleMatch) {
-        vehicleMatch.mileage = nextMileage
-      }
-      persistVehicles()
-      showMileage.value = false
-      showToast('📏 Kilométrage enregistré : ' + formatKm(myVehicle.value.mileage) + ' km')
     }
 
     const startIntervention = (inter) => {

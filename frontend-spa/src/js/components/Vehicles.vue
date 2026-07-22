@@ -177,7 +177,7 @@
 
     <!-- MODAL: Add/Edit Vehicle -->
     <div v-if="showModal" class="modal-overlay animate-fade-in" @click.self="closeModal">
-      <div class="modal glass-dark animate-slide-in-up">
+      <div class="modal glass-dark animate-slide-in-up modal-lg">
         <div class="modal-header">
           <h3 class="text-glow">
             <i class="fas fa-plus-circle"></i> {{ isEditing ? 'Modifier' : 'Ajouter' }} un Véhicule
@@ -187,7 +187,24 @@
           </button>
         </div>
         <div class="modal-body">
-          <div class="form-grid">
+          <!-- Tabs -->
+          <div class="modal-tabs">
+            <button :class="{ active: modalTab === 'form' }" @click="modalTab = 'form'">
+              <i class="fas fa-car"></i> Formulaire
+            </button>
+            <button :class="{ active: modalTab === 'vehicles' }" @click="modalTab = 'vehicles'">
+              <i class="fas fa-list"></i> Mes Véhicules
+            </button>
+            <button :class="{ active: modalTab === 'documents' }" @click="modalTab = 'documents'">
+              <i class="fas fa-file-alt"></i> Documents
+            </button>
+            <button :class="{ active: modalTab === 'consumption' }" @click="modalTab = 'consumption'">
+              <i class="fas fa-gas-pump"></i> Consommation
+            </button>
+          </div>
+
+          <!-- Form Tab -->
+          <div v-if="modalTab === 'form'" class="form-grid">
             <div class="form-group">
               <label>Marque *</label>
               <input v-model="vehicleForm.brand" class="input-field" placeholder="Toyota, Renault...">
@@ -221,6 +238,68 @@
               </select>
             </div>
           </div>
+
+          <!-- Vehicles List Tab -->
+          <div v-if="modalTab === 'vehicles'" class="vehicles-list">
+            <div v-if="vehicles.length === 0" class="empty-state">
+              <i class="fas fa-car-side text-4xl"></i>
+              <p>Aucun véhicule enregistré</p>
+            </div>
+            <div v-for="v in vehicles" :key="v.id" class="vehicle-list-item" @click="editVehicle(v)">
+              <div class="v-item-icon"><i class="fas fa-car"></i></div>
+              <div class="v-item-info">
+                <strong>{{ v.brand }} {{ v.model }}</strong>
+                <small>{{ v.licensePlate }} • {{ formatKm(v.mileage) }} km</small>
+              </div>
+              <div class="v-item-status">
+                <span :class="'status-badge ' + v.statusClass">{{ v.status }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documents Tab -->
+          <div v-if="modalTab === 'documents'" class="documents-section">
+            <div v-if="isEditing" class="vehicle-documents">
+              <div v-for="doc in vehicleDocuments" :key="doc.id" class="doc-item">
+                <div class="doc-icon"><i :class="doc.icon"></i></div>
+                <div class="doc-info">
+                  <strong>{{ doc.name }}</strong>
+                  <small>{{ doc.type }} • Exp: {{ doc.expiryDate }}</small>
+                </div>
+                <span v-if="doc.blockchainVerified" class="verified-badge"><i class="fas fa-check-circle"></i></span>
+              </div>
+            </div>
+            <div v-else class="empty-state">
+              <i class="fas fa-file-alt text-4xl"></i>
+              <p>Ajoutez d'abord un véhicule pour gérer ses documents</p>
+            </div>
+          </div>
+
+          <!-- Consumption Tab -->
+          <div v-if="modalTab === 'consumption'" class="consumption-section">
+            <div v-if="isEditing" class="vehicle-consumption">
+              <div class="consumption-stats">
+                <div class="stat-item">
+                  <span class="stat-label">Moyenne</span>
+                  <span class="stat-value">{{ vehicleConsumption.avg }} L/100km</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Coût total</span>
+                  <span class="stat-value">{{ formatFcfa(vehicleConsumption.totalCost) }}</span>
+                </div>
+              </div>
+              <div v-for="record in vehicleConsumption.history" :key="record.id" class="fuel-record">
+                <small>{{ record.date }}</small>
+                <strong>{{ record.liters }} L</strong>
+                <small>{{ formatFcfa(record.cost) }}</small>
+              </div>
+            </div>
+            <div v-else class="empty-state">
+              <i class="fas fa-gas-pump text-4xl"></i>
+              <p>Ajoutez d'abord un véhicule pour suivre sa consommation</p>
+            </div>
+          </div>
+
           <p v-if="formError" class="form-error">{{ formError }}</p>
         </div>
         <div class="modal-footer">
@@ -303,6 +382,9 @@ export default {
 
     const toast = ref({ show: false, message: '', type: 'success', icon: 'fas fa-check-circle' })
     const vehicles = ref(loadVehicles())
+    const modalTab = ref('form')
+    const vehicleDocuments = ref([])
+    const vehicleConsumption = ref({ avg: '0', totalCost: 0, history: [] })
 
     const currentRole = computed(() => store.state.auth?.user?.roles?.[0]?.name || '')
     const addVehicleLabel = computed(() => {
@@ -382,6 +464,7 @@ export default {
     const openAddModal = () => {
       isEditing.value = false
       formError.value = ''
+      modalTab.value = 'form'
       vehicleForm.value = {
         brand: '',
         model: '',
@@ -391,6 +474,8 @@ export default {
         purchasePrice: '',
         status: 'Disponible'
       }
+      vehicleDocuments.value = []
+      vehicleConsumption.value = { avg: '0', totalCost: 0, history: [] }
       showModal.value = true
     }
 
@@ -452,6 +537,7 @@ export default {
     const editVehicle = (vehicle) => {
       isEditing.value = true
       formError.value = ''
+      modalTab.value = 'form'
       vehicleForm.value = {
         id: vehicle.id,
         brand: vehicle.brand,
@@ -461,6 +547,20 @@ export default {
         mileage: vehicle.mileage,
         purchasePrice: vehicle.purchasePrice || '',
         status: vehicle.status || 'Disponible'
+      }
+      // Simuler des données de documents et consommation
+      vehicleDocuments.value = [
+        { id: 1, name: 'Carte Grise', type: 'Administratif', expiryDate: '2025-12-31', icon: 'fas fa-id-card', blockchainVerified: vehicle.blockchainVerified },
+        { id: 2, name: 'Assurance', type: 'Assurance', expiryDate: '2024-06-30', icon: 'fas fa-shield-alt', blockchainVerified: vehicle.blockchainVerified }
+      ]
+      vehicleConsumption.value = {
+        avg: '5.2',
+        totalCost: 125000,
+        history: [
+          { id: 1, date: '2024-01-15', liters: 45, cost: 45000 },
+          { id: 2, date: '2024-02-20', liters: 38, cost: 38000 },
+          { id: 3, date: '2024-03-10', liters: 42, cost: 42000 }
+        ]
       }
       activeMenu.value = null
       showModal.value = true
@@ -578,7 +678,10 @@ export default {
       saving,
       deleting,
       formError,
-      addVehicleLabel
+      addVehicleLabel,
+      modalTab,
+      vehicleDocuments,
+      vehicleConsumption
     }
   }
 }
@@ -1351,6 +1454,217 @@ export default {
 .btn-danger:disabled {
   opacity: 0.7;
   cursor: wait;
+}
+
+/* Modal Tabs */
+.modal-lg {
+  max-width: 700px;
+}
+
+.modal-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  padding-bottom: 12px;
+}
+
+.modal-tabs button {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.modal-tabs button:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+}
+
+.modal-tabs button.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+
+.modal-tabs button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Vehicles List in Modal */
+.vehicles-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.vehicle-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.vehicle-list-item:hover {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.3);
+  transform: translateX(4px);
+}
+
+.v-item-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(56, 189, 248, 0.15);
+  border-radius: 8px;
+  color: #38bdf8;
+}
+
+.v-item-info {
+  flex: 1;
+}
+
+.v-item-info strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 14px;
+}
+
+.v-item-info small {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.v-item-status .status-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+/* Documents Section */
+.documents-section,
+.consumption-section {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.vehicle-documents {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  border-radius: 10px;
+}
+
+.doc-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(56, 189, 248, 0.15);
+  border-radius: 8px;
+  color: #38bdf8;
+}
+
+.doc-info {
+  flex: 1;
+}
+
+.doc-info strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 14px;
+}
+
+.doc-info small {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.verified-badge {
+  color: #10b981;
+  font-size: 16px;
+}
+
+/* Consumption Section */
+.vehicle-consumption {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.consumption-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.stat-item {
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.fuel-record {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  border-radius: 8px;
+}
+
+.fuel-record small {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.fuel-record strong {
+  color: #f8fafc;
+  font-size: 14px;
 }
 
 @media (max-width: 768px) {
