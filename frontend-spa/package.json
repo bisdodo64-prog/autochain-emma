@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:clean": "node -e \"const fs=require('fs');fs.existsSync('dist')&&fs.rmSync('dist',{recursive:true});fs.existsSync('node_modules/.vite')&&fs.rmSync('node_modules/.vite',{recursive:true})\" && vite build",
     "preview": "vite preview",
     "test": "node scripts/smoke.mjs",
     "smoke": "node scripts/smoke.mjs"

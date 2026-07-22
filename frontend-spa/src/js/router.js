@@ -1,10 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Dashboard from './components/Dashboard.vue'
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
   { path: '/login', name: 'Login', component: () => import('../views/Login.vue') },
-  { path: '/dashboard', name: 'Dashboard', component: Dashboard, meta: { requiresAuth: true } },
+  { path: '/dashboard', name: 'Dashboard', component: () => import('./components/Dashboard.vue'), meta: { requiresAuth: true } },
   { path: '/vehicles', name: 'Vehicles', component: () => import('./components/Vehicles.vue'), meta: { requiresAuth: true } },
   { path: '/vehicle/:id', name: 'VehicleDetail', component: () => import('./components/VehicleDetail.vue'), meta: { requiresAuth: true } },
   { path: '/vehicle/:id/timeline', name: 'VehicleTimeline', component: () => import('./components/VehicleTimeline.vue'), meta: { requiresAuth: true }, props: true },
@@ -17,7 +16,7 @@ const routes = [
   { path: '/audit', name: 'Audit', component: () => import('../views/Audit.vue'), meta: { requiresAuth: true } },
   { path: '/profile', name: 'Profile', component: () => import('../views/Profile.vue'), meta: { requiresAuth: true } },
   { path: '/settings', name: 'Settings', component: () => import('./components/Settings.vue'), meta: { requiresAuth: true } },
-  { path: '/role/:role', name: 'RoleWorkspace', component: Dashboard, meta: { requiresAuth: true } }
+  { path: '/role/:role', name: 'RoleWorkspace', component: () => import('./components/Dashboard.vue'), meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({
